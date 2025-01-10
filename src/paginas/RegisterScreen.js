@@ -1,83 +1,113 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView } from 'react-native';
 
-const Register = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const navigation = useNavigation();
+export function RegisterScreen() {
+  const [form, setForm] = useState({
+    nick: '',
+    name: '',
+    lastName1: '',
+    lastName2: '',
+  });
 
-  const handleRegister = () => {
-    if (!email || !password || !confirmPassword) {
-      Alert.alert('Error', 'Por favor, complete todos los campos.');
-      return;
-    }
+  const handleInputChange = (field, value) => {
+    setForm({ ...form, [field]: value });
+  };
 
-    if (password !== confirmPassword) {
-      Alert.alert('Error', 'Las contraseñas no coinciden.');
-      return;
-    }
-
-    console.log('Email:', email);
-    console.log('Password:', password);
-    navigation.navigate('LoginScreen');
+  const handleSubmit = () => {
+    console.log('Formulario enviado:', form);
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Registrarse</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.imageContainer}>
+        <Image
+          source={require('../../assets/formulario.png')} 
+          style={styles.image}
+        />
+      </View>
+
+      <Text style={styles.title}>Completar los siguientes campos:</Text>
 
       <TextInput
         style={styles.input}
-        placeholder="Correo electrónico"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
+        placeholder="Introduzca su nick"
+        placeholderTextColor="#aaa"
+        value={form.nick}
+        onChangeText={(value) => handleInputChange('nick', value)}
       />
 
       <TextInput
         style={styles.input}
-        placeholder="Contraseña"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
+        placeholder="Introduzca su nombre"
+        placeholderTextColor="#aaa"
+        value={form.name}
+        onChangeText={(value) => handleInputChange('name', value)}
       />
 
       <TextInput
         style={styles.input}
-        placeholder="Confirmar contraseña"
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-        secureTextEntry
+        placeholder="Introduzca su primer apellido"
+        placeholderTextColor="#aaa"
+        value={form.lastName1}
+        onChangeText={(value) => handleInputChange('lastName1', value)}
       />
 
-      <Button title="Registrar" onPress={handleRegister} />
-    </View>
+      <TextInput
+        style={styles.input}
+        placeholder="Introduzca su segundo apellido"
+        placeholderTextColor="#aaa"
+        value={form.lastName2}
+        onChangeText={(value) => handleInputChange('lastName2', value)}
+      />
+
+      <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+        <Text style={styles.submitButtonText}>FINALIZAR</Text>
+      </TouchableOpacity>
+    </ScrollView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: 20,
-    backgroundColor: '#fff',
+    flexGrow: 1,
+    backgroundColor: '#121212',
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  imageContainer: {
+    marginBottom: 20,
+  },
+  image: {
+    width: 200, 
+    height: 150,
+    resizeMode: 'contain',
   },
   title: {
-    fontSize: 24,
+    color: '#70c100',
+    fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
   },
   input: {
-    height: 50,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    marginBottom: 15,
-    paddingLeft: 10,
+    width: '80%',
+    borderBottomWidth: 1,
+    borderBottomColor: '#aaa',
+    color: '#fff',
+    padding: 10,
+    marginVertical: 10,
+  },
+  submitButton: {
+    width: '80%',
+    backgroundColor: '#70c100',
+    padding: 15,
     borderRadius: 5,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  submitButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
-
-export default Register;
