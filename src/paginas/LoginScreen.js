@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
 
-export function LoginScreen() {
+export function LoginScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <View style={styles.logoContainer}>
@@ -30,11 +30,11 @@ export function LoginScreen() {
         <Text style={styles.forgotPassword}>¿Olvidaste la contraseña?</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.loginButton}>
+      <TouchableOpacity style={styles.loginButton} onPress={() => navigation.navigate('TabScreen')}>
         <Text style={styles.loginButtonText}>Log in</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity>
+      <TouchableOpacity onPress={() => navigation.navigate('RegisterScreen')}>
         <Text style={styles.createAccount}>
           ¿No tienes cuenta? <Text style={styles.createAccountLink}>Crear cuenta</Text>
         </Text>
