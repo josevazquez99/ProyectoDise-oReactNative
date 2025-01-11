@@ -3,7 +3,6 @@ import { StyleSheet } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
 import { LoginScreen, RegisterScreen, TabScreen } from './src/paginas';
-
 const Stack = createStackNavigator();
 
 export default function App() {

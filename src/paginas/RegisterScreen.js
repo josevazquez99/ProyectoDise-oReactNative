@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView, Alert } from 'react-native';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../utils/Firebase'; 
 
 export function RegisterScreen() {
   const [form, setForm] = useState({
@@ -7,6 +9,8 @@ export function RegisterScreen() {
     name: '',
     lastName1: '',
     lastName2: '',
+    email: '',
+    password: '',
   });
 
   const handleInputChange = (field, value) => {
@@ -14,7 +18,21 @@ export function RegisterScreen() {
   };
 
   const handleSubmit = () => {
-    console.log('Formulario enviado:', form);
+    const { email, password, nick, name, lastName1, lastName2 } = form;
+
+    if (!email || !password || !nick || !name || !lastName1 || !lastName2) {
+      Alert.alert('Error', 'Todos los campos son obligatorios');
+      return;
+    }
+
+    createUserWithEmailAndPassword(auth, email, password)
+      .then(() => {
+        Alert.alert('Registro exitoso', 'Usuario creado correctamente');
+        console.log('Usuario registrado:', { nick, name, lastName1, lastName2 });
+      })
+      .catch((error) => {
+        Alert.alert('Error', error.message);
+      });
   };
 
   return (
@@ -58,6 +76,24 @@ export function RegisterScreen() {
         placeholderTextColor="#aaa"
         value={form.lastName2}
         onChangeText={(value) => handleInputChange('lastName2', value)}
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Introduzca su correo electrónico"
+        placeholderTextColor="#aaa"
+        value={form.email}
+        onChangeText={(value) => handleInputChange('email', value)}
+        keyboardType="email-address"
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Introduzca su contraseña"
+        placeholderTextColor="#aaa"
+        value={form.password}
+        onChangeText={(value) => handleInputChange('password', value)}
+        secureTextEntry
       />
 
       <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>

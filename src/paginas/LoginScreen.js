@@ -1,7 +1,28 @@
-import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../utils/Firebase'; 
 
 export function LoginScreen({ navigation }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleLogin = () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Por favor, introduce correo y contraseña');
+      return;
+    }
+
+    signInWithEmailAndPassword(auth, email, password)
+      .then(() => {
+        Alert.alert('Éxito', 'Has iniciado sesión correctamente');
+        navigation.navigate('TabScreen');
+      })
+      .catch((error) => {
+        Alert.alert('Error', error.message);
+      });
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.logoContainer}>
@@ -17,6 +38,9 @@ export function LoginScreen({ navigation }) {
         style={styles.input}
         placeholder="Introduzca su correo o nick..."
         placeholderTextColor="#aaa"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
       />
 
       <TextInput
@@ -24,13 +48,15 @@ export function LoginScreen({ navigation }) {
         placeholder="Introduzca su contraseña..."
         placeholderTextColor="#aaa"
         secureTextEntry
+        value={password}
+        onChangeText={setPassword}
       />
 
       <TouchableOpacity>
         <Text style={styles.forgotPassword}>¿Olvidaste la contraseña?</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.loginButton} onPress={() => navigation.navigate('TabScreen')}>
+      <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
         <Text style={styles.loginButtonText}>Log in</Text>
       </TouchableOpacity>
 
