@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView, Alert } from 'react-native';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../utils/Firebase'; 
+import { auth } from '../utils/Firebase';
 
 export function RegisterScreen() {
   const [form, setForm] = useState({
@@ -17,7 +17,7 @@ export function RegisterScreen() {
     setForm({ ...form, [field]: value });
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const { email, password, nick, name, lastName1, lastName2 } = form;
 
     if (!email || !password || !nick || !name || !lastName1 || !lastName2) {
@@ -25,21 +25,42 @@ export function RegisterScreen() {
       return;
     }
 
-    createUserWithEmailAndPassword(auth, email, password)
-      .then(() => {
-        Alert.alert('Registro exitoso', 'Usuario creado correctamente');
-        console.log('Usuario registrado:', { nick, name, lastName1, lastName2 });
-      })
-      .catch((error) => {
-        Alert.alert('Error', error.message);
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userId = userCredential.user.uid;
+
+      const usuarioData = {
+        nick,
+        user_id: userId,
+        nombre: name,
+        apellidos: `${lastName1} ${lastName2}`,
+      };
+
+      const response = await fetch('http://192.168.1.171:8080/proyecto01/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(usuarioData),
       });
+
+      if (response.ok) {
+        Alert.alert('Registro exitoso', 'Usuario creado correctamente en Firebase y MongoDB');
+      } else {
+        const errorData = await response.json();
+        Alert.alert('Error', errorData.message || 'Error al registrar el usuario en MongoDB');
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', error.message || 'Error al registrar el usuario');
+    }
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.imageContainer}>
         <Image
-          source={require('../../assets/formulario.png')} 
+          source={require('../../assets/formulario.png')}
           style={styles.image}
         />
       </View>
@@ -114,7 +135,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   image: {
-    width: 200, 
+    width: 200,
     height: 150,
     resizeMode: 'contain',
   },
