@@ -17,7 +17,6 @@ export function LoginScreen({ navigation }) {
       .then(() => {
 
       Alert.alert('Éxito', 'Has iniciado sesión correctamente');
-
       navigation.navigate('TabScreen');
         
       })

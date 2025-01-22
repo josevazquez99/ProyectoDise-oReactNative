@@ -108,7 +108,7 @@ export default function AddScreen() {
     formData.append("image_url", imageUrl);
 
     try {
-      const response = await fetch('http://192.168.1.171:8080/proyecto01/publicaciones', {
+      const response = await fetch('http://10.0.2.2:8080/proyecto01/publicaciones', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
