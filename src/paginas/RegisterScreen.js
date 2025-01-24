@@ -1,125 +1,147 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView, Alert } from 'react-native';
+import { ScrollView, View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../utils/Firebase';
+import { auth } from '../utils/Firebase'; 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export function RegisterScreen() {
-  const [form, setForm] = useState({
-    nick: '',
-    name: '',
-    lastName1: '',
-    lastName2: '',
-    email: '',
-    password: '',
-  });
-
-  const handleInputChange = (field, value) => {
-    setForm({ ...form, [field]: value });
-  };
-
-  const handleSubmit = async () => {
-    const { email, password, nick, name, lastName1, lastName2 } = form;
-
-    if (!email || !password || !nick || !name || !lastName1 || !lastName2) {
-      Alert.alert('Error', 'Todos los campos son obligatorios');
+export function RegisterScreen({ navigation }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [nick, setNick] = useState('');
+  const [nombre, setNombre] = useState('');
+  const [apellidos, setApellidos] = useState('');
+  const [message, setMessage] = useState('');
+  
+  const handleRegister = async () => {
+    if (password !== confirmPassword) {
+      setMessage('Las contraseñas no coinciden.');
       return;
     }
 
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const userId = userCredential.user.uid;
+      const user = userCredential.user;
 
-      const usuarioData = {
+      const data = {
         nick,
-        user_id: userId,
-        nombre: name,
-        apellidos: `${lastName1} ${lastName2}`,
+        user_id: user.uid,
+        nombre,
+        apellidos,
       };
 
-      const response = await fetch('http://192.168.1.171:8080/proyecto01/users', {
+      const serverUrl = 'http://localhost:8080/proyecto01/users';
+
+      console.log("Enviando datos al servidor:", data);
+
+      const response = await fetch(serverUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(usuarioData),
+        body: JSON.stringify(data),
       });
 
       if (response.ok) {
-        Alert.alert('Registro exitoso', 'Usuario creado correctamente en Firebase y MongoDB');
+        const responseData = await response.json();
+        console.log('Respuesta del servidor:', responseData);
+
+        setMessage('Usuario registrado y datos guardados exitosamente.');
+
+        // Guardar el nombre del usuario en AsyncStorage
+        await AsyncStorage.setItem('userName', responseData.nombre);
+
+        navigation.navigate('Login');
       } else {
         const errorData = await response.json();
-        Alert.alert('Error', errorData.message || 'Error al registrar el usuario en MongoDB');
+        console.log('Error del servidor:', errorData);
+        setMessage(`Error al guardar los datos:${errorData.message}`);
       }
     } catch (error) {
-      console.error(error);
-      Alert.alert('Error', error.message || 'Error al registrar el usuario');
+      console.error("Error en el registro:", error);
+      if (error.code) {
+        switch (error.code) {
+          case 'auth/email-already-in-use':
+            setMessage('El correo electrónico ya está en uso.');
+            break;
+          case 'auth/invalid-email':
+            setMessage('El correo electrónico no es válido.');
+            break;
+          case 'auth/weak-password':
+            setMessage('La contraseña es muy débil.');
+            break;
+          default:
+            setMessage('Error al registrar el usuario.');
+            break;
+        }
+      } else if (error.message) {
+        setMessage(`Error al conectar con el servidor: ${error.message}`);
+      } else {
+        setMessage('Error desconocido al registrar el usuario.');
+      }
     }
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.imageContainer}>
-        <Image
-          source={require('../../assets/formulario.png')}
-          style={styles.image}
-        />
-      </View>
-
+      <Image
+        source={require('../../assets/formulario.png')}
+        style={styles.image}
+      />
       <Text style={styles.title}>Completar los siguientes campos:</Text>
-
+      
       <TextInput
         style={styles.input}
-        placeholder="Introduzca su nick"
-        placeholderTextColor="#aaa"
-        value={form.nick}
-        onChangeText={(value) => handleInputChange('nick', value)}
+        placeholder="Nick"
+        placeholderTextColor="#ccc"
+        value={nick}
+        onChangeText={setNick}
       />
-
       <TextInput
         style={styles.input}
-        placeholder="Introduzca su nombre"
-        placeholderTextColor="#aaa"
-        value={form.name}
-        onChangeText={(value) => handleInputChange('name', value)}
+        placeholder="Nombre"
+        placeholderTextColor="#ccc"
+        value={nombre}
+        onChangeText={setNombre}
       />
-
       <TextInput
         style={styles.input}
-        placeholder="Introduzca su primer apellido"
-        placeholderTextColor="#aaa"
-        value={form.lastName1}
-        onChangeText={(value) => handleInputChange('lastName1', value)}
+        placeholder="Apellidos"
+        placeholderTextColor="#ccc"
+        value={apellidos}
+        onChangeText={setApellidos}
       />
-
       <TextInput
         style={styles.input}
-        placeholder="Introduzca su segundo apellido"
-        placeholderTextColor="#aaa"
-        value={form.lastName2}
-        onChangeText={(value) => handleInputChange('lastName2', value)}
+        placeholder="Correo electrónico"
+        placeholderTextColor="#ccc"
+        value={email}
+        onChangeText={setEmail}
       />
-
       <TextInput
         style={styles.input}
-        placeholder="Introduzca su correo electrónico"
-        placeholderTextColor="#aaa"
-        value={form.email}
-        onChangeText={(value) => handleInputChange('email', value)}
-        keyboardType="email-address"
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Introduzca su contraseña"
-        placeholderTextColor="#aaa"
-        value={form.password}
-        onChangeText={(value) => handleInputChange('password', value)}
+        placeholder="Contraseña"
+        placeholderTextColor="#ccc"
         secureTextEntry
+        value={password}
+        onChangeText={setPassword}
       />
-
-      <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-        <Text style={styles.submitButtonText}>FINALIZAR</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Confirmar Contraseña"
+        placeholderTextColor="#ccc"
+        secureTextEntry
+        value={confirmPassword}
+        onChangeText={setConfirmPassword}
+      />
+      
+      <TouchableOpacity style={styles.button} onPress={handleRegister}>
+        <Text style={styles.buttonText}>FINALIZAR</Text>
       </TouchableOpacity>
+      
+      <View style={styles.messageSection}>
+        <Text style={styles.messageText}>{message}</Text>
+      </View>
     </ScrollView>
   );
 }
@@ -127,44 +149,58 @@ export function RegisterScreen() {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    backgroundColor: '#121212',
+    backgroundColor: '#1a1a1a',
     alignItems: 'center',
-    paddingVertical: 20,
-  },
-  imageContainer: {
-    marginBottom: 20,
+    justifyContent: 'flex-start',
+    padding: 20,
   },
   image: {
-    width: 200,
-    height: 150,
+    width: 350,
+    height: 350,
     resizeMode: 'contain',
+    marginBottom: 30,
   },
   title: {
-    color: '#70c100',
-    fontSize: 18,
+    color: '#a1e45a',
+    fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 20,
-    textAlign: 'center',
+    width: '100%',
   },
   input: {
-    width: '80%',
-    borderBottomWidth: 1,
-    borderBottomColor: '#aaa',
+    backgroundColor: '#1a1a1a',
     color: '#fff',
-    padding: 10,
-    marginVertical: 10,
-  },
-  submitButton: {
-    width: '80%',
-    backgroundColor: '#70c100',
+    width: '100%',
     padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  submitButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    marginBottom: 15,
     fontSize: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#555',
+  },
+  button: {
+    backgroundColor: 'transparent',
+    paddingVertical: 8,
+    paddingHorizontal: 30,
+    borderRadius: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#a1e45a',
+    marginTop: 20,
+    width: 'auto',
+  },
+  buttonText: {
+    color: '#a1e45a',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  messageSection: {
+    width: '80%',
+    marginTop: 15,
+    alignItems: 'center',
+  },
+  messageText: {
+    color: '#ffffff',
+    fontSize: 14,
+    textAlign: 'center',
   },
 });

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Image, ScrollView, ActivityIndicator, Touchable
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { auth } from '../utils/Firebase';
 
-export default function HomeScreen() {
+export function HomeScreen() {
   const [publicaciones, setPublicaciones] = useState([]);
   const [loading, setLoading] = useState(true);
   const userId = auth.currentUser.uid;
@@ -14,7 +14,7 @@ export default function HomeScreen() {
 
   const fetchPublicaciones = async () => {
     try {
-      const url = 'http://10.0.2.2:8080/proyecto01/publicaciones';
+      const url = 'http://localhost:8080/proyecto01/publicaciones';
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Error al obtener publicaciones');
@@ -37,7 +37,7 @@ export default function HomeScreen() {
       updatedPublicaciones[pubIndex].likes += 1;
       setPublicaciones(updatedPublicaciones);
 
-      const url = `http://10.0.2.2:8080/proyecto01/publicaciones/put/${id}/${userId}`;
+      const url = `http://localhost:8080/proyecto01/publicaciones/put/${id}/${userId}`;
       const response = await fetch(url, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },

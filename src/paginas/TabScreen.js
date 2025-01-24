@@ -2,8 +2,8 @@ import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons"; 
 import { TouchableOpacity } from 'react-native';
-import AddScreen from "./AddScreen";
-import HomeScreen from "./HomeScreen"
+import {AddScreen,HomeScreen} from "./index";
+
 
 export function TabScreen() {
   const Tab = createBottomTabNavigator();

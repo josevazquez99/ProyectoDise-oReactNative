@@ -1,3 +1,5 @@
 export {LoginScreen} from "./LoginScreen"
 export {RegisterScreen} from "./RegisterScreen"
 export {TabScreen} from "./TabScreen"
+export {AddScreen} from "./AddScreen"
+export {HomeScreen} from "./HomeScreen"
