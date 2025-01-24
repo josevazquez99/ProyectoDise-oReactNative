@@ -1,20 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image, ActivityIndicator, TouchableOpacity, FlatList } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { auth } from '../utils/Firebase';
 
-export default function HomeScreen() {
+export function HomeScreen() {
   const [publicaciones, setPublicaciones] = useState([]);
   const [loading, setLoading] = useState(true);
   const userId = auth.currentUser.uid;
 
-  useEffect(() => {
-    fetchPublicaciones();
-  }, []);
-
   const fetchPublicaciones = async () => {
     try {
-      const url = 'http://10.0.2.2:8080/proyecto01/publicaciones';
+      const url = 'http://192.168.1.171:8080/proyecto01/publicaciones'; 
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Error al obtener publicaciones');
@@ -37,7 +33,7 @@ export default function HomeScreen() {
       updatedPublicaciones[pubIndex].likes += 1;
       setPublicaciones(updatedPublicaciones);
 
-      const url = `http://10.0.2.2:8080/proyecto01/publicaciones/put/${id}/${userId}`;
+      const url = `http://192.168.1.171:8080/proyecto01/publicaciones/put/${id}/${userId}`; 
       const response = await fetch(url, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -55,41 +51,45 @@ export default function HomeScreen() {
     }
   };
 
+  useEffect(() => {
+    fetchPublicaciones();
+  }, []);
+
   return (
     <View style={styles.container}>
       <Text style={styles.text}>¡Bienvenido a la pantalla de inicio!</Text>
       {loading ? (
         <ActivityIndicator size="large" color="#ffffff" />
       ) : (
-        <ScrollView contentContainerStyle={styles.imageContainer}>
-          {publicaciones.map((publicacion) => {
-            console.log(publicacion); 
-            return (
-              <View key={publicacion.id} style={styles.card}>
-                <Text style={styles.userId}>ID del Usuario: {publicacion.userId}</Text>
-                <Text style={styles.title}>{publicacion.titulo}</Text>
-                {publicacion.image_url && (
-                  <Image
-                    source={{ uri: publicacion.image_url }}
-                    style={styles.image}
-                    onError={(e) => console.log('Error al cargar la imagen:', e.nativeEvent.error)}
+        <FlatList
+          contentContainerStyle={styles.imageContainer}
+          data={publicaciones}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => (
+            <View style={styles.card}>
+              <Text style={styles.userId}>ID del Usuario: {item.userId}</Text>
+              <Text style={styles.title}>{item.titulo}</Text>
+              {item.image_url && (
+                <Image
+                  source={{ uri: item.image_url }}
+                  style={styles.image}
+                  onError={(e) => console.log('Error al cargar la imagen:', e.nativeEvent.error)}
+                />
+              )}
+              <Text style={styles.description}>{item.comentario}</Text>
+              <View style={styles.likeContainer}>
+                <TouchableOpacity onPress={() => handleLike(item.id)}>
+                  <Icon
+                    name={item.likes > 0 ? 'heart' : 'heart-o'}
+                    size={30}
+                    color={item.likes > 0 ? '#ff0000' : '#ffffff'}
                   />
-                )}
-                <Text style={styles.description}>{publicacion.comentario}</Text>
-                <View style={styles.likeContainer}>
-                  <TouchableOpacity onPress={() => handleLike(publicacion.id)}>
-                    <Icon
-                      name={publicacion.likes > 0 ? 'heart' : 'heart-o'}
-                      size={30}
-                      color={publicacion.likes > 0 ? '#ff0000' : '#ffffff'}
-                    />
-                  </TouchableOpacity>
-                  <Text style={styles.likeCount}>{publicacion.likes || 0} Likes</Text>
-                </View>
+                </TouchableOpacity>
+                <Text style={styles.likeCount}>{item.likes || 0} Likes</Text>
               </View>
-            );
-          })}
-        </ScrollView>
+            </View>
+          )}
+        />
       )}
     </View>
   );

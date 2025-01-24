@@ -12,6 +12,8 @@ export function RegisterScreen() {
     email: '',
     password: '',
   });
+  
+  const apiUrl = 'http://192.168.1.171:8080/proyecto01/users'; 
 
   const handleInputChange = (field, value) => {
     setForm({ ...form, [field]: value });
@@ -36,7 +38,12 @@ export function RegisterScreen() {
         apellidos: `${lastName1} ${lastName2}`,
       };
 
-      const response = await fetch('http://192.168.1.171:8080/proyecto01/users', {
+      if (!apiUrl) {
+        Alert.alert("Error", "La URL de la API no está configurada");
+        return;
+      }
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
