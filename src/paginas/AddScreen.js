@@ -1,18 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth } from '../utils/Firebase';
 
 const CLOUD_NAME = "dhjbacqmj";
 const UPLOAD_PRESET = "example";
 const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
-const SERVER_URL = 'http://localhost:8080/proyecto01/publicaciones';
+const SERVER_URL = 'http://192.168.1.171:8080/proyecto01/publicaciones';
 
 export function AddScreen() {
-    const userId = auth.currentUser.uid;
     const navigation = useNavigation();
     const [image, setImage] = useState(null);
     const [titulo, setTitulo] = useState('');
@@ -24,31 +21,40 @@ export function AddScreen() {
 
     const requestPermissions = async () => {
         const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
-        const galleryPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-        if (cameraPermission.status !== 'granted' || galleryPermission.status !== 'granted') {
-            Alert.alert('Permiso denegado', 'Es necesario otorgar permisos para usar la cámara o la galería');
+        if (cameraPermission.status !== 'granted') {
+            Alert.alert('Permiso denegado', 'Es necesario otorgar permisos para usar la cámara');
         }
     };
 
-
     const takePhoto = async () => {
-        try {
-            let result = await ImagePicker.launchCameraAsync({
-                allowsEditing: true,
-                quality: 1,
-            });
-    
-            if (!result.canceled) {
-                setImage(result.assets[0].uri);
-            }
-        } catch (error) {
-            console.error('Error al abrir la cámara:', error);
-            Alert.alert('Error', 'No se pudo acceder a la cámara');
+        const permission = await ImagePicker.requestCameraPermissionsAsync();
+        if (!permission.granted) {
+            Alert.alert("Permiso denegado", "Necesitamos permisos para acceder a la cámara");
+            return;
+        }
+
+        const result = await ImagePicker.launchCameraAsync({
+            allowsEditing: true,
+            aspect: [4, 3],
+            quality: 1,
+        });
+
+        if (result.canceled) {
+            console.log("La foto fue cancelada.");
+            return;
+        }
+
+        const imageUri = result.assets?.[0]?.uri;
+        if (imageUri) {
+            setImage(imageUri);
+            console.log("Foto tomada:", imageUri);
+        } else {
+            console.log("No se pudo obtener la URI de la imagen.");
         }
     };
 
     const uploadImage = async () => {
+        console.log('Se ha pulsado el botón PUBLICAR');
         if (!image) {
             Alert.alert('Error', 'Por favor selecciona o toma una imagen');
             return;
@@ -57,57 +63,43 @@ export function AddScreen() {
         const formData = new FormData();
         formData.append('file', {
             uri: image,
-            type: 'image/jpeg',  // Asegúrate de que el tipo de archivo sea correcto
-            name: 'photo.jpg',   // Asigna un nombre adecuado
+            type: 'image/jpeg',
+            name: 'photo.jpg',
         });
         formData.append('upload_preset', UPLOAD_PRESET);
 
-        console.log('FormData:', formData);  // Revisa los datos antes de enviarlos
-
         try {
-            const response = await axios.post(CLOUDINARY_URL, formData, {
+            console.log('Enviando imagen a Cloudinary...');
+            const response = await fetch(CLOUDINARY_URL, {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
+                body: formData,
             });
 
-            const imageUrl = response.data.secure_url;
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Error al subir a Cloudinary: ${errorText}`);
+            }
+
+            const data = await response.json();
+            console.log('Respuesta de Cloudinary:', data);
+            const imageUrl = data.secure_url;
 
             await savePost(imageUrl, titulo, comentario);
-            await saveImageToStorage(imageUrl, titulo, comentario);
-
             navigation.navigate('HomeScreen');
         } catch (error) {
-            console.error(error);
-            if (error.response) {
-                // La solicitud se hizo y el servidor respondió con un código de estado
-                console.error('Error response:', error.response.data);
-                console.error('Status:', error.response.status);
-                Alert.alert('Error', `Error al subir la imagen: ${error.response.data.message || error.message}`);
-            } else if (error.request) {
-                // La solicitud fue hecha, pero no hubo respuesta
-                console.error('No response received:', error.request);
-                Alert.alert('Error', 'No se recibió respuesta del servidor');
-            } else {
-                // Algo pasó al configurar la solicitud
-                console.error('Error', error.message);
-                Alert.alert('Error', error.message);
-            }
+            console.error('Error al subir la imagen a Cloudinary:', error);
+            Alert.alert('Error', 'Error al subir la imagen');
         }
     };
 
     const savePost = async (imageUrl, titulo, comentario) => {
-        const userName = await AsyncStorage.getItem('userName');
-        const postData = {
-            user_id: userId,
-            image_url: imageUrl,
-            titulo,
-            comentario,
-            like: [],
-            user: userName,
-        };
-
-        console.log("Enviando datos al servidor:", postData);
+        console.log('Entrando en savePost');
+        const userName = auth.currentUser?.displayName || 'Usuario Anónimo'; 
+        console.log('Usuario obtenido:', userName);
+        console.log('Datos a enviar:', { imageUrl, titulo, comentario });
 
         try {
             const response = await fetch(SERVER_URL, {
@@ -115,57 +107,64 @@ export function AddScreen() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(postData),
+                body: JSON.stringify({
+                    user_id: auth.currentUser?.uid,
+                    image_url: imageUrl,
+                    titulo,
+                    comentario,
+                    like: [],
+                    user: userName,
+                }),
             });
 
             if (!response.ok) {
-                throw new Error('Error al guardar la publicación');
+                const errorText = await response.text();
+                console.error('Error en la respuesta del servidor:', errorText);
+                throw new Error(`Error del servidor: ${errorText}`);
             }
+
+            console.log('Publicación guardada con éxito');
         } catch (error) {
-            console.error('Error en la solicitud:', error);
+            console.error('Error en savePost:', error);
             Alert.alert('Error', 'No se pudo guardar la publicación');
         }
-    };
-
-    const saveImageToStorage = async (imageUrl, titulo, comentario) => {
-        const userName = await AsyncStorage.getItem('userName');
-        const storedImages = await AsyncStorage.getItem('images');
-        const imagesArray = storedImages ? JSON.parse(storedImages) : [];
-        imagesArray.push({ url: imageUrl, user: userName, caption: comentario, liked: false });
-        await AsyncStorage.setItem('images', JSON.stringify(imagesArray));
-        console.log("Imágenes guardadas en AsyncStorage:", imagesArray);
     };
 
     return (
         <View style={styles.container}>
             <Text style={styles.header}>PUBLICACIÓN</Text>
-            <View style={styles.imageContainer}>
-                <TouchableOpacity onPress={() => takePhoto()} style={styles.touchableOpacity}>
-                {image ? (
-                    <Image source={{ uri: image }} style={styles.imagePreview} />
-                ) : (
-                    <Image source={require('../../assets/image.png')} style={styles.imagePreview} />
-                )}
+
+            <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+                <TouchableOpacity style={styles.imageContainer} onPress={takePhoto}>
+                    {image ? (
+                        <Image source={{ uri: image }} style={styles.image} />
+                    ) : (
+                        <Image source={require('../../assets/imageAdd.png')} style={styles.image} />
+                    )}
                 </TouchableOpacity>
             </View>
+
             <Text style={styles.label}>Título:</Text>
             <TextInput
                 style={styles.input}
                 placeholder="Máx. 40 Caracteres"
-                placeholderTextColor="gray"
-                value={titulo}
                 maxLength={40}
+                placeholderTextColor="#888"
+                value={titulo}
                 onChangeText={setTitulo}
             />
+
             <Text style={styles.label}>Descripción:</Text>
             <TextInput
                 style={[styles.input, styles.textArea]}
                 placeholder="Máx. 250 Caracteres"
-                placeholderTextColor="gray"
-                value={comentario}
                 maxLength={250}
                 multiline
+                placeholderTextColor="#888"
+                value={comentario}
                 onChangeText={setComentario}
+                blurOnSubmit={false}
+                returnKeyType="default"
             />
             <TouchableOpacity style={styles.uploadButton} onPress={uploadImage}>
                 <Text style={styles.uploadButtonText}>PUBLICAR</Text>
@@ -177,66 +176,65 @@ export function AddScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#1a1a1a',
-        alignItems: 'center',
-        padding: 20,
+        backgroundColor: '#23272A',
+        paddingHorizontal: 30,
+        paddingTop: 20,
     },
     header: {
-        fontSize: 24,
-        color: '#9FC63B',
+        fontSize: 26,
+        color: '#9EF01A',
         fontWeight: 'bold',
-        marginBottom: 30,
+        textAlign: 'center',
+        marginBottom: 20,
     },
     imageContainer: {
-        width: 140,
-        height: 140,
-        backgroundColor: '#1a1a1a',
-        borderRadius: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
+        width: 150,
+        height: 150,
+        borderWidth: 2,
+        borderColor: '#9EF01A',
+        borderRadius: 12,
+        padding: 20,
         marginBottom: 20,
-        borderWidth: 5,
-        borderColor: '#9FC63B',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    imagePreview: {
-        width: '80%',
-        height: '80%',
-        borderRadius: 15,
+    image: {
+        width: 80,
+        height: 80,
+        resizeMode: 'contain',
     },
     label: {
-        alignSelf: 'flex-start',
-        color: '#9FC63B',
-        fontSize: 16,
+        fontSize: 18,
+        color: '#9EF01A',
         marginBottom: 5,
     },
     input: {
-        backgroundColor: '#262626',
-        color: 'white',
-        borderRadius: 5,
-        width: '100%',
-        padding: 10,
-        marginBottom: 20,
+        backgroundColor: '#323639',
+        color: '#fff',
+        padding: 12,
+        borderRadius: 8,
+        marginBottom: 15,
         borderWidth: 1,
-        borderColor: '#333',
-        fontSize: 16,
+        borderColor: '#444',
     },
     textArea: {
-        height: 100,
+        height: 170,
         textAlignVertical: 'top',
     },
     uploadButton: {
-        backgroundColor: '#1a1a1a',
-        borderRadius: 5,
-        padding: 15,
+        backgroundColor: '#323639',
+        paddingVertical: 12,
+        paddingHorizontal: 30,
+        borderRadius: 8,
+        borderWidth: 2,
+        borderColor: '#9EF01A',
         alignItems: 'center',
-        width: '40%',
-        marginTop: 5,
-        borderWidth: 1,
-        borderColor: '#9FC63B',
+        alignSelf: 'center',
+        marginTop: 20,
     },
     uploadButtonText: {
-        color: 'white',
+        color: '#DFDFDF',
         fontWeight: 'bold',
-        fontSize: 16,
+        fontSize: 18,
     },
 });

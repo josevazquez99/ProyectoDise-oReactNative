@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { ScrollView, View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../utils/Firebase'; 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ScrollView, View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Dimensions } from 'react-native';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { auth } from '../utils/Firebase';
 
 export function RegisterScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -12,7 +11,7 @@ export function RegisterScreen({ navigation }) {
   const [nombre, setNombre] = useState('');
   const [apellidos, setApellidos] = useState('');
   const [message, setMessage] = useState('');
-  
+
   const handleRegister = async () => {
     if (password !== confirmPassword) {
       setMessage('Las contraseñas no coinciden.');
@@ -23,6 +22,10 @@ export function RegisterScreen({ navigation }) {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
+      await updateProfile(user, {
+        displayName: nick,
+      });
+
       const data = {
         nick,
         user_id: user.uid,
@@ -30,7 +33,7 @@ export function RegisterScreen({ navigation }) {
         apellidos,
       };
 
-      const serverUrl = 'http://localhost:8080/proyecto01/users';
+      const serverUrl = 'http://192.168.1.171:8080/proyecto01/users';
 
       console.log("Enviando datos al servidor:", data);
 
@@ -48,14 +51,11 @@ export function RegisterScreen({ navigation }) {
 
         setMessage('Usuario registrado y datos guardados exitosamente.');
 
-        // Guardar el nombre del usuario en AsyncStorage
-        await AsyncStorage.setItem('userName', responseData.nombre);
-
-        navigation.navigate('Login');
+        navigation.navigate('LoginScreen');
       } else {
         const errorData = await response.json();
         console.log('Error del servidor:', errorData);
-        setMessage(`Error al guardar los datos:${errorData.message}`);
+        setMessage(`Error al guardar los datos: ${errorData.message}`);
       }
     } catch (error) {
       console.error("Error en el registro:", error);
@@ -146,61 +146,63 @@ export function RegisterScreen({ navigation }) {
   );
 }
 
+const { width, height } = Dimensions.get('window');
+
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#23272A',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    padding: 20,
+    padding: width * 0.05,
   },
   image: {
-    width: 350,
-    height: 350,
+    width: width * 0.7, 
+    height: height * 0.25, 
     resizeMode: 'contain',
-    marginBottom: 30,
+    marginBottom: height * 0.03, 
   },
   title: {
     color: '#a1e45a',
-    fontSize: 20,
+    fontSize: width * 0.045, 
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: height * 0.02,
     width: '100%',
   },
   input: {
     backgroundColor: '#1a1a1a',
     color: '#fff',
     width: '100%',
-    padding: 15,
-    marginBottom: 15,
-    fontSize: 16,
+    padding: height * 0.015, 
+    marginBottom: height * 0.015, 
+    fontSize: width * 0.04, 
     borderBottomWidth: 1,
     borderBottomColor: '#555',
   },
   button: {
     backgroundColor: 'transparent',
-    paddingVertical: 8,
-    paddingHorizontal: 30,
+    paddingVertical: height * 0.015,
+    paddingHorizontal: width * 0.1,
     borderRadius: 10,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#a1e45a',
-    marginTop: 20,
+    marginTop: height * 0.02,
     width: 'auto',
   },
   buttonText: {
     color: '#a1e45a',
-    fontSize: 16,
+    fontSize: width * 0.04, 
     fontWeight: 'bold',
   },
   messageSection: {
     width: '80%',
-    marginTop: 15,
+    marginTop: height * 0.02,
     alignItems: 'center',
   },
   messageText: {
     color: '#ffffff',
-    fontSize: 14,
+    fontSize: width * 0.035,
     textAlign: 'center',
   },
 });

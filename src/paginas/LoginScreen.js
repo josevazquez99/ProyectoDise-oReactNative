@@ -1,23 +1,22 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView } from 'react-native';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import {app} from '../utils/Firebase'; 
-
+import { app } from '../utils/Firebase';
 
 export function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [message, setMessage] = useState('');  
+  const [message, setMessage] = useState('');
 
   const handleLogin = () => {
     const auth = getAuth(app);
     signInWithEmailAndPassword(auth, email, password)
       .then(() => {
-        setMessage('Inicio de sesión exitoso, bienvenido.'); 
-        navigation.navigate('TabScreen'); 
+        setMessage('Inicio de sesión exitoso, bienvenido.');
+        navigation.navigate('TabScreen');
       })
       .catch((error) => {
-        setMessage('Error de inicio de sesión: ' + error.message); 
+        setMessage('Error de inicio de sesión: ' + error.message);
       });
   };
 
@@ -66,12 +65,12 @@ export function LoginScreen({ navigation }) {
 
       <View style={styles.footer}>
         <View style={styles.line}></View>
-        <Text style={styles.createAccount}>
-          ¿No tienes cuenta?{' '}
-          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-            <Text style={styles.createAccountLink}>Crear cuenta</Text>
+        <View style={styles.createAccountContainer}>
+          <Text style={styles.createAccountText}>¿No tienes cuenta?</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('RegisterScreen')}>
+            <Text style={styles.createAccountLink}> Crear cuenta</Text>
           </TouchableOpacity>
-        </Text>
+        </View>
       </View>
     </ScrollView>
   );
@@ -80,17 +79,17 @@ export function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1e1e1e',
+    backgroundColor: '#23272A',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 40,  
+    paddingTop: 40,
     paddingBottom: 20,
   },
   logoSection: {
     marginBottom: 20,
   },
   logo: {
-    width: 150, 
+    width: 150,
     height: 150,
     resizeMode: 'contain',
   },
@@ -149,18 +148,22 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   footer: {
-    width: '100%',
+    width: '80%',
     alignItems: 'center',
     paddingBottom: 20,
-    paddingHorizontal: 20,
   },
   line: {
-    width: '80%',
+    width: '100%',
     height: 1,
     backgroundColor: '#9FC63B',
-    marginBottom: 5,
+    marginBottom: 10,
   },
-  createAccount: {
+  createAccountContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  createAccountText: {
     color: '#ffffff',
     fontSize: 14,
   },

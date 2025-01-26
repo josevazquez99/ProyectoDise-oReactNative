@@ -2,7 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
-import { LoginScreen, RegisterScreen, TabScreen } from './src/paginas';
+import { HomeScreen, LoginScreen, RegisterScreen, TabScreen } from './src/paginas';
 const Stack = createStackNavigator();
 
 export default function App() {
@@ -12,6 +12,7 @@ export default function App() {
         <Stack.Screen name="LoginScreen" component={LoginScreen} />
         <Stack.Screen name="RegisterScreen" component={RegisterScreen} />
         <Stack.Screen name="TabScreen" component={TabScreen} />
+        <Stack.Screen name="HomeScreen" component={HomeScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -20,7 +21,7 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#23272A',
     alignItems: 'center',
     justifyContent: 'center',
   },
