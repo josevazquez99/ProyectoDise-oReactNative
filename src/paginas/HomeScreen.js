@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { auth } from '../utils/Firebase';
 
-// Función para calcular fecha 
+// Función para calcular fecha
 const timeAgo = (date) => {
   const now = new Date();
-  const diff = now - new Date(date); 
+  const diff = now - new Date(date);
 
   const seconds = Math.floor(diff / 1000);
   const minutes = Math.floor(seconds / 60);
@@ -94,6 +94,31 @@ export function HomeScreen() {
     }
   };
 
+  const renderItem = ({ item }) => (
+    <View key={item.id} style={styles.publicacion}>
+      <Image
+        source={{ uri: item.image_url }}
+        style={styles.image}
+        onError={(e) =>
+          console.log('Error al cargar la imagen:', e.nativeEvent.error)
+        }
+      />
+      <View style={styles.likeContainer}>
+        <TouchableOpacity onPress={() => handleLike(item.id)}>
+          <Icon
+            name={userLikes.has(item.id) ? 'heart' : 'heart-o'}
+            size={24}
+            color={userLikes.has(item.id) ? '#ff0000' : '#ffffff'}
+          />
+        </TouchableOpacity>
+        <Text style={styles.likeCount}>{item.likes || 0} Me gusta</Text>
+      </View>
+      <Text style={styles.title}>{item.titulo}</Text>
+      <Text style={styles.description}>{item.comentario}</Text>
+      <Text style={styles.date}>{timeAgo(item.createdAt)}</Text>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -101,7 +126,7 @@ export function HomeScreen() {
         <View style={styles.userInfo}>
           <View style={styles.userDetails}>
             <Image
-              source={require('../../assets/perfil.png')}  
+              source={require('../../assets/perfil.png')}
               style={styles.userPhoto}
             />
             <View>
@@ -117,38 +142,17 @@ export function HomeScreen() {
           <ActivityIndicator size="large" color="#ffffff" />
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.imageContainer}>
-          {publicaciones.length > 0 ? (
-            publicaciones.map((publicacion) => {
-              return (
-                <View key={publicacion.id} style={styles.publicacion}>
-                  <Image
-                    source={{ uri: publicacion.image_url }}
-                    style={styles.image}
-                    onError={(e) =>
-                      console.log('Error al cargar la imagen:', e.nativeEvent.error)
-                    }
-                  />
-                  <View style={styles.likeContainer}>
-                    <TouchableOpacity onPress={() => handleLike(publicacion.id)}>
-                      <Icon
-                        name={userLikes.has(publicacion.id) ? 'heart' : 'heart-o'}
-                        size={24}
-                        color={userLikes.has(publicacion.id) ? '#ff0000' : '#ffffff'}
-                      />
-                    </TouchableOpacity>
-                    <Text style={styles.likeCount}>{publicacion.likes || 0} Me gusta</Text>
-                  </View>
-                  <Text style={styles.title}>{publicacion.titulo}</Text>
-                  <Text style={styles.description}>{publicacion.comentario}</Text>
-                  <Text style={styles.date}>{timeAgo(publicacion.createdAt)}</Text>
-                </View>
-              );
-            })
-          ) : (
-            <Text style={styles.noPublicaciones}>No hay publicaciones disponibles.</Text>
-          )}
-        </ScrollView>
+        <FlatList
+          data={publicaciones}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.imageContainer}
+          ListEmptyComponent={
+            <Text style={styles.noPublicaciones}>
+              No hay publicaciones disponibles.
+            </Text>
+          }
+        />
       )}
     </View>
   );
@@ -191,7 +195,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginRight: 10,
     borderWidth: 2,
-    borderColor: '#9FC63B',  
+    borderColor: '#9FC63B',
   },
   imageContainer: {
     padding: 10,
@@ -239,7 +243,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#23272A',
   },
   noPublicaciones: {
-    color: '#23272A',
+    color: '#ffffff',
     textAlign: 'center',
     fontSize: 16,
     marginTop: 20,
