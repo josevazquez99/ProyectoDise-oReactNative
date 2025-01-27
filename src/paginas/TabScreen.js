@@ -1,24 +1,32 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons"; 
-import AjustesScreen from "./AjustesScreen";
-import PublicacionesScreen from "./PublicacionesScreen";
-import AddScreen from "./AddScreen";
+import { TouchableOpacity } from 'react-native';
+import { AddScreen, HomeScreen } from "./index";
 
 export function TabScreen() {
   const Tab = createBottomTabNavigator();
+
+  const handleAddPress = (navigation) => {
+    navigation.navigate('Add', { takePhoto: true });
+  };
+
   return (
     <Tab.Navigator
       screenOptions={{
-        headerShown: false,
-        tabBarStyle: { backgroundColor: "#282828" },
-        tabBarActiveTintColor: "#ffffff",
+        headerShown: false,  
+        tabBarStyle: { 
+          backgroundColor: "#23272A", 
+          borderTopWidth: 0,  
+          paddingBottom: 10,  
+        },
+        tabBarActiveTintColor: "#868686",
         tabBarInactiveTintColor: "#aaa",
       }}
     >
       <Tab.Screen
         name="Publicaciones"
-        component={PublicacionesScreen}
+        component={HomeScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" color={color} size={size} />
@@ -28,20 +36,14 @@ export function TabScreen() {
       <Tab.Screen
         name="Add"
         component={AddScreen}
-        options={{
+        options={({ navigation }) => ({
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="add" color={color} size={size} />
           ),
-        }}
-      />
-      <Tab.Screen
-        name="Ajustes"
-        component={AjustesScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings" color={color} size={size} />
+          tabBarButton: (props) => (
+            <TouchableOpacity {...props} onPress={() => handleAddPress(navigation)} />
           ),
-        }}
+        })}
       />
     </Tab.Navigator>
   );
