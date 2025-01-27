@@ -31,6 +31,7 @@ export function RegisterScreen({ navigation }) {
         user_id: user.uid,
         nombre,
         apellidos,
+        profile_picture:"../../assets/perfil.png"
       };
 
       const serverUrl = 'http://192.168.1.171:8080/proyecto01/users';
