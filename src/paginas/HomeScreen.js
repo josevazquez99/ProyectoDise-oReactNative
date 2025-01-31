@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image, FlatList, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { auth } from '../utils/Firebase';
 
-// Función para calcular fecha
 const timeAgo = (date) => {
   const now = new Date();
   const diff = now - new Date(date);
@@ -24,7 +23,7 @@ const timeAgo = (date) => {
   }
 };
 
-export function HomeScreen() {
+export function HomeScreen({ navigation }) {
   const [publicaciones, setPublicaciones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState('');
@@ -42,7 +41,7 @@ export function HomeScreen() {
 
   const fetchPublicaciones = async () => {
     try {
-      const url = 'http://192.168.1.171:8080/proyecto01/publicaciones';
+      const url = 'http://192.168.1.145:8080/proyecto01/publicaciones';
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Error al obtener publicaciones');
@@ -77,7 +76,7 @@ export function HomeScreen() {
 
       setPublicaciones(updatedPublicaciones);
 
-      const url = `http://192.168.1.171:8080/proyecto01/publicaciones/put/${id}/${userId}`;
+      const url = `http://192.168.1.145:8080/proyecto01/publicaciones/put/${id}/${userId}`;
       const response = await fetch(url, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -96,64 +95,66 @@ export function HomeScreen() {
 
   const renderItem = ({ item }) => (
     <View key={item.id} style={styles.publicacion}>
-      <Image
-        source={{ uri: item.image_url }}
-        style={styles.image}
-        onError={(e) =>
-          console.log('Error al cargar la imagen:', e.nativeEvent.error)
-        }
-      />
+      <TouchableOpacity onPress={() => navigation.navigate('PublicacionScreen', { selectedPostId: item.id })}>
+        <Image
+          source={{ uri: item.image_url }}
+          style={styles.image}
+          onError={(e) =>
+            console.log('Error al cargar la imagen:', e.nativeEvent.error)
+          }
+        />
+      </TouchableOpacity>
+      <View style={styles.overlay}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Icon name="arrow-left" size={20} color="#9FC63B" />
+        </TouchableOpacity>
+        <View style={styles.userDetails}>
+          <Image
+            source={require('../../assets/perfil.png')}
+            style={styles.userPhoto}
+          />
+          <View style={styles.userTextContainer}>
+            <Text style={styles.publishedBy}>Publicado por</Text>
+            <Text style={styles.userName}>{userName}</Text>
+            <Text style={styles.date}>{timeAgo(item.createdAt)}</Text>
+          </View>
+        </View>
+      </View>
       <View style={styles.likeContainer}>
         <TouchableOpacity onPress={() => handleLike(item.id)}>
           <Icon
             name={userLikes.has(item.id) ? 'heart' : 'heart-o'}
             size={24}
-            color={userLikes.has(item.id) ? '#ff0000' : '#ffffff'}
+            color={userLikes.has(item.id) ? '#9FC63B' : '#ffffff'}
           />
         </TouchableOpacity>
         <Text style={styles.likeCount}>{item.likes || 0} Me gusta</Text>
       </View>
       <Text style={styles.title}>{item.titulo}</Text>
       <Text style={styles.description}>{item.comentario}</Text>
-      <Text style={styles.date}>{timeAgo(item.createdAt)}</Text>
+      {/* Total de comentarios */}
+      <Text style={styles.commentCount}>
+        {item.comentarios && item.comentarios.length
+          ? `${item.comentarios.length} comentario${item.comentarios.length > 1 ? 's' : ''}`
+          : 'Sin comentarios'}
+      </Text>
     </View>
   );
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Icon name="arrow-left" size={20} color="#9FC63B" />
-        <View style={styles.userInfo}>
-          <View style={styles.userDetails}>
-            <Image
-              source={require('../../assets/perfil.png')}
-              style={styles.userPhoto}
-            />
-            <View>
-              <Text style={styles.publishedBy}>Publicado por</Text>
-              <Text style={styles.userName}>{userName}</Text>
-            </View>
-          </View>
-        </View>
-      </View>
-
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#ffffff" />
-        </View>
-      ) : (
-        <FlatList
-          data={publicaciones}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.imageContainer}
-          ListEmptyComponent={
-            <Text style={styles.noPublicaciones}>
-              No hay publicaciones disponibles.
-            </Text>
-          }
-        />
-      )}
+      <Image source={require("../../assets/cabecera.png")} style={styles.logo} />
+      <FlatList
+        data={publicaciones}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.imageContainer}
+        ListEmptyComponent={
+          <Text style={styles.noPublicaciones}>
+            No hay publicaciones disponibles.
+          </Text>
+        }
+      />
     </View>
   );
 }
@@ -163,31 +164,33 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#23272A',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  imageContainer: {
+    padding: 10,
+    flexGrow: 1, // Esto garantiza que FlatList ocupe toda la pantalla
+  },
+  publicacion: {
+    marginBottom: 20,
     backgroundColor: '#23272A',
     padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    position: 'relative',
   },
-  userInfo: {
-    marginLeft: 10,
-    flex: 1,
+  image: {
+    width: '100%',
+    height: 200,
+    marginBottom: 10,
+  },
+  overlay: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    zIndex: 1,
   },
   userDetails: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  publishedBy: {
-    color: '#cccccc',
-    fontSize: 12,
-  },
-  userName: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    flexShrink: 1,
+    marginLeft: 10,
   },
   userPhoto: {
     width: 40,
@@ -197,18 +200,17 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#9FC63B',
   },
-  imageContainer: {
-    padding: 10,
+  userTextContainer: {
+    marginLeft: 10,
   },
-  publicacion: {
-    marginBottom: 20,
-    backgroundColor: '#23272A',
-    padding: 10,
+  publishedBy: {
+    color: '#cccccc',
+    fontSize: 12,
   },
-  image: {
-    width: '100%',
-    height: 200,
-    marginBottom: 10,
+  userName: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   likeContainer: {
     flexDirection: 'row',
@@ -236,16 +238,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontStyle: 'italic',
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#23272A',
+  logo: {
+    width: '100%',
+    height: 90,
+    marginBottom: 20,
   },
   noPublicaciones: {
     color: '#ffffff',
     textAlign: 'center',
     fontSize: 16,
     marginTop: 20,
+  },
+  commentCount: {
+    color: '#888888',
+    fontSize: 12,
+    marginTop: 5,
+    fontStyle: 'italic',
   },
 });

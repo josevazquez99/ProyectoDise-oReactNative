@@ -2,7 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
-import { HomeScreen, LoginScreen, RegisterScreen, TabScreen } from './src/paginas';
+import { HomeScreen, LoginScreen, RegisterScreen, TabScreen, PublicacionScreen,ComentarioScreen } from './src/paginas';
 const Stack = createStackNavigator();
 
 export default function App() {
@@ -13,6 +13,8 @@ export default function App() {
         <Stack.Screen name="RegisterScreen" component={RegisterScreen} />
         <Stack.Screen name="TabScreen" component={TabScreen} />
         <Stack.Screen name="HomeScreen" component={HomeScreen} />
+        <Stack.Screen name="PublicacionScreen" component={PublicacionScreen} />
+        <Stack.Screen name="ComentarioScreen" component={ComentarioScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -7,7 +7,7 @@ import { auth } from '../utils/Firebase';
 const CLOUD_NAME = "dhjbacqmj";
 const UPLOAD_PRESET = "example";
 const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
-const SERVER_URL = 'http://192.168.1.171:8080/proyecto01/publicaciones';
+const SERVER_URL = 'http://192.168.1.145:8080/proyecto01/publicaciones';
 
 export function AddScreen() {
     const navigation = useNavigation();

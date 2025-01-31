@@ -34,7 +34,7 @@ export function RegisterScreen({ navigation }) {
         profile_picture:"../../assets/perfil.png"
       };
 
-      const serverUrl = 'http://192.168.1.171:8080/proyecto01/users';
+      const serverUrl = 'http://192.168.1.145:8080/proyecto01/users';
 
       console.log("Enviando datos al servidor:", data);
 
