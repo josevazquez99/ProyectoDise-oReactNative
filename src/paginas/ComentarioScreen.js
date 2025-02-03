@@ -1,20 +1,47 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { auth } from '../utils/Firebase';
+import { useNavigation } from '@react-navigation/native'; 
 
-export function ComentarioScreen({ onClose }) {
+export function ComentarioScreen({ route }) {
   const [comentario, setComentario] = useState('');
+  const userId = auth.currentUser?.uid;
+  const { postId } = route.params;  
+  const navigation = useNavigation();  
 
-  const handlePublicar = () => {
+  const handlePublicar = async () => {
     if (comentario.trim() !== '') {
-      console.log('Comentario publicado:', comentario);
-      onClose(); // Cierra el modal después de publicar
+      try {
+        const response = await fetch('http://192.168.1.154:8080/proyecto01/comentarios/put', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: userId,
+            idPublicacion: postId,  
+            comentario: comentario
+          }),
+        });
+  
+        if (!response.ok) {
+          throw new Error('Error al publicar el comentario');
+        }
+  
+        const data = await response.json();
+        console.log('Comentario publicado:', data);
+        setComentario('');
+        navigation.navigate('PublicacionScreen');  
+      } catch (error) {
+        console.error('Error al publicar el comentario:', error);
+      }
     }
   };
+  
 
   return (
     <View style={styles.overlay}>
-      <TouchableOpacity style={styles.background} onPress={onClose} />
-
+      <TouchableOpacity style={styles.background} onPress={() => navigation.goBack()} /> 
       <View style={styles.commentBox}>
         <Text style={styles.label}>Comentario:</Text>
         <TextInput
@@ -85,5 +112,3 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
-
-export default ComentarioScreen;

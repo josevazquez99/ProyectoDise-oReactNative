@@ -41,7 +41,7 @@ export function HomeScreen({ navigation }) {
 
   const fetchPublicaciones = async () => {
     try {
-      const url = 'http://192.168.1.145:8080/proyecto01/publicaciones';
+      const url = 'http://192.168.1.154:8080/proyecto01/publicaciones';
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Error al obtener publicaciones');
@@ -76,7 +76,7 @@ export function HomeScreen({ navigation }) {
 
       setPublicaciones(updatedPublicaciones);
 
-      const url = `http://192.168.1.145:8080/proyecto01/publicaciones/put/${id}/${userId}`;
+      const url = `http://192.168.1.154:8080/proyecto01/publicaciones/put/${id}/${userId}`;
       const response = await fetch(url, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -132,7 +132,6 @@ export function HomeScreen({ navigation }) {
       </View>
       <Text style={styles.title}>{item.titulo}</Text>
       <Text style={styles.description}>{item.comentario}</Text>
-      {/* Total de comentarios */}
       <Text style={styles.commentCount}>
         {item.comentarios && item.comentarios.length
           ? `${item.comentarios.length} comentario${item.comentarios.length > 1 ? 's' : ''}`
@@ -166,7 +165,7 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     padding: 10,
-    flexGrow: 1, // Esto garantiza que FlatList ocupe toda la pantalla
+    flexGrow: 1, 
   },
   publicacion: {
     marginBottom: 20,

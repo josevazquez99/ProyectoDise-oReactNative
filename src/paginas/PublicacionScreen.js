@@ -33,7 +33,7 @@ export function PublicacionScreen({ route }) {
   const [userLikes, setUserLikes] = useState(new Set());
   const userId = auth.currentUser.uid;
   const navigation = useNavigation(); 
-  const { selectedPostId } = route.params; // Recibiendo el ID de la publicación seleccionada
+  const { selectedPostId } = route.params; 
 
   useEffect(() => {
     const currentUser = auth.currentUser;
@@ -47,7 +47,7 @@ export function PublicacionScreen({ route }) {
 
   const fetchPublicaciones = async () => {
     try {
-      const url = 'http://192.168.1.145:8080/proyecto01/publicaciones';
+      const url = 'http://192.168.1.154:8080/proyecto01/publicaciones';
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Error al obtener publicaciones');
@@ -64,7 +64,7 @@ export function PublicacionScreen({ route }) {
 
   const fetchComentarios = async () => {
     try {
-      const url = `http://192.168.1.145:8080/proyecto01/comentarios/${selectedPostId}`;
+      const url = `http://192.168.1.154:8080/proyecto01/comentarios/${selectedPostId}`;
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Error al obtener comentarios');
@@ -97,7 +97,7 @@ export function PublicacionScreen({ route }) {
 
       setPublicaciones(updatedPublicaciones);
 
-      const url = `http://192.168.1.145:8080/proyecto01/publicaciones/put/${id}/${userId}`;
+      const url = `http://192.168.1.154:8080/proyecto01/publicaciones/put/${id}/${userId}`;
       const response = await fetch(url, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -208,9 +208,13 @@ export function PublicacionScreen({ route }) {
         <Text style={styles.noPublicaciones}>Publicación no encontrada.</Text>
       )}
       
-      <TouchableOpacity style={styles.floatingButton} onPress={() => navigation.navigate('ComentarioScreen')}>
+      <TouchableOpacity 
+        style={styles.floatingButton} 
+        onPress={() => navigation.navigate('ComentarioScreen', { postId: selectedPostId })}
+        >
         <Image source={require("../../assets/botonComentarios.png")} style={styles.floatingImage} />
-      </TouchableOpacity>
+        </TouchableOpacity>
+
 
     </View>
   );
