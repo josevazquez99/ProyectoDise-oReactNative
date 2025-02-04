@@ -2,7 +2,7 @@ import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons"; 
 import { TouchableOpacity } from 'react-native';
-import { AddScreen, HomeScreen } from "./index";
+import { AddScreen, HomeScreen,SettingsScreen } from "./index";
 
 export function TabScreen() {
   const Tab = createBottomTabNavigator();
@@ -44,6 +44,15 @@ export function TabScreen() {
             <TouchableOpacity {...props} onPress={() => handleAddPress(navigation)} />
           ),
         })}
+      />
+      <Tab.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="settings" color={color} size={size} />
+          ),
+        }}
       />
     </Tab.Navigator>
   );

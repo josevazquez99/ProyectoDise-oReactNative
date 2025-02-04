@@ -6,8 +6,17 @@ import { useNavigation } from '@react-navigation/native';
 export function ComentarioScreen({ route }) {
   const [comentario, setComentario] = useState('');
   const userId = auth.currentUser?.uid;
-  const { postId } = route.params;  
+  const postId = route.params?.postId || null; 
   const navigation = useNavigation();  
+
+  if (!postId) {
+    console.error("Error: postId no está definido en route.params");
+    return (
+      <View style={styles.container}>
+        <Text style={styles.errorText}>Error: No se encontró la publicación.</Text>
+      </View>
+    );
+  }
 
   const handlePublicar = async () => {
     if (comentario.trim() !== '') {
@@ -28,87 +37,56 @@ export function ComentarioScreen({ route }) {
           throw new Error('Error al publicar el comentario');
         }
   
-        const data = await response.json();
-        console.log('Comentario publicado:', data);
         setComentario('');
-        navigation.navigate('PublicacionScreen');  
+        navigation.goBack();
       } catch (error) {
-        console.error('Error al publicar el comentario:', error);
+        console.error('Error:', error);
       }
     }
   };
-  
 
   return (
-    <View style={styles.overlay}>
-      <TouchableOpacity style={styles.background} onPress={() => navigation.goBack()} /> 
-      <View style={styles.commentBox}>
-        <Text style={styles.label}>Comentario:</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Máx. 500 Caracteres"
-          placeholderTextColor="#888"
-          maxLength={500}
-          multiline
-          value={comentario}
-          onChangeText={setComentario}
-        />
-        <View style={styles.buttons}>
-          <TouchableOpacity style={styles.button} onPress={handlePublicar}>
-            <Text style={styles.buttonText}>Publicar</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+    <View style={styles.container}>
+      <TextInput
+        style={styles.input}
+        placeholder="Escribe tu comentario..."
+        value={comentario}
+        onChangeText={setComentario}
+      />
+      <TouchableOpacity style={styles.button} onPress={handlePublicar}>
+        <Text style={styles.buttonText}>Publicar</Text>
+      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
+  container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  background: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  commentBox: {
-    backgroundColor: '#23272A',
-    width: '80%',
     padding: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  label: {
-    color: '#9FC63B',
-    fontSize: 18,
-    marginBottom: 10,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   input: {
     width: '100%',
-    height: 150,
-    backgroundColor: '#333',
-    color: '#fff',
-    borderRadius: 10,
     padding: 10,
-    textAlignVertical: 'top',
-  },
-  buttons: {
-    flexDirection: 'row',
-    marginTop: 20,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    marginBottom: 10
   },
   button: {
-    backgroundColor: '#9FC63B',
+    backgroundColor: '#007bff',
     padding: 10,
-    borderRadius: 5,
+    borderRadius: 5
   },
   buttonText: {
     color: '#fff',
-    fontSize: 16,
+    fontWeight: 'bold'
   },
+  errorText: {
+    color: 'red',
+    fontSize: 16,
+    fontWeight: 'bold'
+  }
 });

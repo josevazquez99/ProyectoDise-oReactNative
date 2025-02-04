@@ -198,8 +198,8 @@ export function PublicacionScreen({ route }) {
               <View style={styles.commentContainer}>
                 <Text style={styles.commentUser}>{item.user}</Text>
                 <Text style={styles.commentText}>{item.texto}</Text>
-                <Text style={styles.commentDate}>{timeAgo(item.createdAt)}</Text>
-              </View>
+                <Text style={styles.commentText}>{item.comentario}</Text>
+                </View>
             )}
             keyExtractor={(item) => item.id.toString()}
           />
