@@ -1,76 +1,54 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native';
-import emailjs from '@emailjs/browser';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image, Alert } from 'react-native';
 
 export function SettingsScreen() {
-    const [nEquipo, setNEquipo] = useState('');
+    const [numeroEquipo, setnumeroEquipo] = useState('');
     const [titulo, setTitulo] = useState('');
     const [descripcion, setDescripcion] = useState('');
     const [showIncidentForm, setShowIncidentForm] = useState(false);
 
     const handleSubmit = async () => {
-        if (!nEquipo || !titulo || !descripcion) {
+        if (!numeroEquipo || !titulo || !descripcion) {
             Alert.alert("Error", "Todos los campos son obligatorios");
             return;
         }
 
         const incidencia = {
-            numero_equipo: nEquipo,
-            titulo: titulo,
-            descripcion: descripcion,
-            fecha: new Date().toISOString(),
+            numeroEquipo,
+            titulo,
+            descripcion,
+            fecha: new Date().toISOString()
         };
 
         try {
             const response = await fetch('http://192.168.1.154:8080/proyecto01/incidencias/post', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(incidencia),
+                body: JSON.stringify(incidencia)
             });
 
             if (!response.ok) {
-                throw new Error('Error al enviar la incidencia');
+                throw new Error(`Error al procesar la incidencia: ${response.status}`);
             }
 
-            // Enviar correo con los detalles de la incidencia
-            await sendEmail(incidencia);
-
-            Alert.alert('Incidencia enviada', 'La incidencia se ha guardado correctamente y se ha enviado un correo.', [
-                {
+            Alert.alert(
+                'Incidencia enviada',
+                'La incidencia se ha guardado correctamente en la base de datos y enviado el correo',
+                [{
                     text: 'Aceptar',
                     onPress: () => {
-                        setNEquipo('');
+                        setnumeroEquipo('');
                         setTitulo('');
                         setDescripcion('');
                         setShowIncidentForm(false);
-                    },
-                },
-            ]);
-        } catch (error) {
-            console.error('Error al enviar la incidencia:', error);
-            Alert.alert('Error', 'No se pudo enviar la incidencia');
-        }
-    };
-
-    const sendEmail = async (incidencia) => {
-        try {
-            await emailjs.send(
-                'service_wvq1anh', 
-                'template_p6pr2ki', 
-                {
-                    numero_equipo: incidencia.numero_equipo,
-                    titulo: incidencia.titulo,
-                    descripcion: incidencia.descripcion,
-                    fecha: incidencia.fecha,
-                    to_email: 'soporte@gmail.com', 
-                },
-                'AyxFsCkFHvUbEHcAR' 
+                    }
+                }]
             );
-            console.log('Correo enviado exitosamente');
         } catch (error) {
-            console.error('Error al enviar el correo:', error);
+            console.error("Error al procesar la incidencia:", error);
+            Alert.alert("Error", error.message);
         }
     };
 
@@ -82,20 +60,38 @@ export function SettingsScreen() {
         <View style={styles.container}>
             <Text style={styles.header}>INCIDENCIAS</Text>
 
+            <View style={styles.incidentContainer}>
+                <View style={[styles.incidentItem, styles.solucionado]}>
+                    <Text style={styles.incidentTitle}>TÍTULO DE INCIDENCIA SOLUCIONADO</Text>
+                </View>
+                <View style={[styles.incidentItem, styles.tramite]}>
+                    <Text style={styles.incidentTitle}>TÍTULO DE INCIDENCIA EN TRÁMITE</Text>
+                </View>
+                <View style={[styles.incidentItem, styles.denegado]}>
+                    <Text style={styles.incidentTitle}>TÍTULO DE INCIDENCIA DENEGADA</Text>
+                </View>
+            </View>
+
             <TouchableOpacity style={styles.addButton} onPress={handleAddIncident}>
                 <Text style={styles.addButtonText}>+</Text>
             </TouchableOpacity>
 
             {showIncidentForm && (
                 <View style={styles.incidentFormContainer}>
-                    <Text style={styles.label}>Nº del equipo:</Text>
+                    <Image
+                        source={require('../../assets/imageAdd.png')}
+                        style={styles.logo}
+                        resizeMode="contain"
+                    />
+
+                    <Text style={styles.label}>Nº del equipo / close:</Text>
                     <TextInput
                         style={styles.input}
                         placeholder="Máx. 40 Caracteres"
                         maxLength={40}
                         placeholderTextColor="#888"
-                        value={nEquipo}
-                        onChangeText={setNEquipo}
+                        value={numeroEquipo}
+                        onChangeText={setnumeroEquipo}
                     />
 
                     <Text style={styles.label}>Título:</Text>
@@ -117,6 +113,8 @@ export function SettingsScreen() {
                         placeholderTextColor="#888"
                         value={descripcion}
                         onChangeText={setDescripcion}
+                        blurOnSubmit={false}
+                        returnKeyType="default"
                     />
 
                     <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
@@ -142,6 +140,29 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginBottom: 20,
     },
+    incidentContainer: {
+        marginBottom: 20,
+    },
+    incidentItem: {
+        backgroundColor: '#323639',
+        padding: 20,
+        borderRadius: 8,
+        marginBottom: 15,
+        borderWidth: 1,
+    },
+    solucionado: {
+        borderColor: '#00FF00',
+    },
+    tramite: {
+        borderColor: '#FFFF00',
+    },
+    denegado: {
+        borderColor: '#FF0000',
+    },
+    incidentTitle: {
+        color: '#DFDFDF',
+        fontSize: 18,
+    },
     addButton: {
         backgroundColor: '#9EF01A',
         width: 60,
@@ -159,7 +180,21 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     incidentFormContainer: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: '#23272A',
+        justifyContent: 'center',
+        alignItems: 'center',
         paddingHorizontal: 30,
+    },
+    logo: {
+        width: '50%',
+        height: 100,
+        alignSelf: 'center',
+        marginBottom: 20,
     },
     label: {
         fontSize: 18,
@@ -180,16 +215,18 @@ const styles = StyleSheet.create({
         textAlignVertical: 'top',
     },
     submitButton: {
-        backgroundColor: '#9EF01A',
+        backgroundColor: '#323639',
         paddingVertical: 12,
         paddingHorizontal: 30,
         borderRadius: 8,
+        borderWidth: 2,
+        borderColor: '#9EF01A',
         alignItems: 'center',
         alignSelf: 'center',
         marginTop: 20,
     },
     submitButtonText: {
-        color: '#23272A',
+        color: '#DFDFDF',
         fontWeight: 'bold',
         fontSize: 18,
     },

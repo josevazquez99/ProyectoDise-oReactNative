@@ -133,9 +133,9 @@ export function HomeScreen({ navigation }) {
       <Text style={styles.title}>{item.titulo}</Text>
       <Text style={styles.description}>{item.comentario}</Text>
       <Text style={styles.commentCount}>
-        {item.comentarios && item.comentarios.length
-          ? `${item.comentarios.length} comentario${item.comentarios.length > 1 ? 's' : ''}`
-          : 'Sin comentarios'}
+      {Array.isArray(item.comentarios) && item.comentarios.length
+        ? `${item.comentarios.length} comentario${item.comentarios.length > 1 ? 's' : ''}`
+        : 'Sin comentarios'}
       </Text>
     </View>
   );
