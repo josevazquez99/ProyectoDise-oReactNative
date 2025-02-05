@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image, FlatList, ActivityIndicator, TouchableOpacity, Modal, TextInput } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native'; 
 import { auth } from '../utils/Firebase';
+import { ScrollView } from 'react-native-gesture-handler';
 
-// Función para calcular fecha
 const timeAgo = (date) => {
   const now = new Date();
   const diff = now - new Date(date);
@@ -14,26 +14,23 @@ const timeAgo = (date) => {
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
 
-  if (days > 0) {
-    return `Hace ${days} día${days > 1 ? 's' : ''}`;
-  } else if (hours > 0) {
-    return `Hace ${hours} hora${hours > 1 ? 's' : ''}`;
-  } else if (minutes > 0) {
-    return `Hace ${minutes} minuto${minutes > 1 ? 's' : ''}`;
-  } else {
-    return `Hace ${seconds} segundo${seconds > 1 ? 's' : ''}`;
-  }
+  if (days > 0) return `Hace ${days} día${days > 1 ? 's' : ''}`;
+  if (hours > 0) return `Hace ${hours} hora${hours > 1 ? 's' : ''}`;
+  if (minutes > 0) return `Hace ${minutes} minuto${minutes > 1 ? 's' : ''}`;
+  return `Hace ${seconds} segundo${seconds > 1 ? 's' : ''}`;
 };
 
 export function PublicacionScreen({ route }) {
   const [publicaciones, setPublicaciones] = useState([]);
   const [comentarios, setComentarios] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [userName, setUserName] = useState('');
   const [userLikes, setUserLikes] = useState(new Set());
+  const [modalVisible, setModalVisible] = useState(false);
+  const [newComment, setNewComment] = useState('');
   const userId = auth.currentUser.uid;
   const navigation = useNavigation(); 
-  const { selectedPostId } = route.params; 
+  const [userName, setUserName] = useState('');
+  const { selectedPostId } = route.params;
 
   useEffect(() => {
     const currentUser = auth.currentUser;
@@ -76,7 +73,6 @@ export function PublicacionScreen({ route }) {
       console.error('Error al obtener comentarios:', error);
     }
   };
-
   const handleLike = async (id) => {
     try {
       const pubIndex = publicaciones.findIndex((pub) => pub.id === id);
@@ -114,54 +110,60 @@ export function PublicacionScreen({ route }) {
     }
   };
 
-  const renderItem = ({ item }) => (
-    <View key={item.id} style={styles.publicacion}>
-      <Image
-        source={{ uri: item.image_url }}
-        style={styles.image}
-        onError={(e) =>
-          console.log('Error al cargar la imagen:', e.nativeEvent.error)
-        }
-      />
-      <View style={styles.likeContainer}>
-        <TouchableOpacity onPress={() => handleLike(item.id)}>
-          <Icon
-            name={userLikes.has(item.id) ? 'heart' : 'heart-o'}
-            size={24}
-            color={userLikes.has(item.id) ? '#ff0000' : '#ffffff'}
-          />
-        </TouchableOpacity>
-        <Text style={styles.likeCount}>{item.likes || 0} Me gusta</Text>
-      </View>
-      <Text style={styles.title}>{item.titulo}</Text>
-      <Text style={styles.description}>{item.comentario}</Text>
-      <Text style={styles.date}>{timeAgo(item.createdAt)}</Text>
-    </View>
-  );
+  const handlePublishComment = async () => {
+    if (newComment.trim() === '') return;
+
+    try {
+      const response = await fetch('http://192.168.1.154:8080/proyecto01/comentarios/put', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          idPublicacion: selectedPostId,
+          comentario: newComment,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al publicar el comentario');
+      }
+
+      setComentarios((prev) => [
+        ...prev,
+        { id: Date.now(), user: 'Tú', texto: newComment },
+      ]);
+      setNewComment('');
+      setModalVisible(false);
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
 
   const selectedPost = publicaciones.find((pub) => pub.id === selectedPostId);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>  
-          <Icon name="arrow-left" size={20} color="#9FC63B" />
-        </TouchableOpacity>
-        <View style={styles.userInfo}>
-          <View style={styles.userDetails}>
-            <Image
-              source={require('../../assets/perfil.png')}
-              style={styles.userPhoto}
-            />
-            <View>
-              <Text style={styles.publishedBy}>Publicado por</Text>
-              <Text style={styles.userName}>{userName}</Text>
-            </View>
+    <ScrollView style={styles.container}>
+    <View style={styles.header}>
+      <TouchableOpacity onPress={() => navigation.goBack()}>  
+        <Icon name="arrow-left" size={20} color="#9FC63B" />
+      </TouchableOpacity>
+      <View style={styles.userInfo}>
+        <View style={styles.userDetails}>
+          <Image
+            source={require('../../assets/perfil.png')}
+            style={styles.userPhoto}
+          />
+          <View>
+            <Text style={styles.publishedBy}>Publicado por</Text>
+            <Text style={styles.userName}>{userName}</Text>
           </View>
         </View>
       </View>
+    </View>
 
-      {loading ? (
+    {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#ffffff" />
         </View>
@@ -179,7 +181,7 @@ export function PublicacionScreen({ route }) {
               <Icon
                 name={userLikes.has(selectedPost.id) ? 'heart' : 'heart-o'}
                 size={24}
-                color={userLikes.has(selectedPost.id) ? '#ff0000' : '#ffffff'}
+                color={userLikes.has(selectedPost.id) ? '#9FC63B' : '#ffffff'}
               />
             </TouchableOpacity>
             <Text style={styles.likeCount}>{selectedPost.likes || 0} Me gusta</Text>
@@ -210,169 +212,254 @@ export function PublicacionScreen({ route }) {
       
       <TouchableOpacity 
         style={styles.floatingButton} 
-        onPress={() => navigation.navigate('ComentarioScreen', { postId: selectedPostId })}
-        >
+        onPress={() => setModalVisible(true)}
+      >
         <Image source={require("../../assets/botonComentarios.png")} style={styles.floatingImage} />
-        </TouchableOpacity>
-
-
-    </View>
+      </TouchableOpacity>
+      
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Comentario:</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Máx 500 caracteres"
+              placeholderTextColor="#888"
+              multiline
+              maxLength={500}
+              value={newComment}
+              onChangeText={setNewComment}
+            />
+            <View style={styles.modalButtonsContainer}>
+              <TouchableOpacity style={styles.cancelButton} onPress={() => setModalVisible(false)}>
+                <Text style={styles.cancelButtonText}>CANCELAR</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.publishButton} onPress={handlePublishComment}>
+                <Text style={styles.publishButtonText}>PUBLICAR</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#23272A',
+     flex: 1,
+     backgroundColor: '#23272A'
+     },
+     header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#23272A',
+      padding: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: '#333',
+    },
+    userInfo: {
+      marginLeft: 10,
+      flex: 1,
+    },
+    userDetails: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    publishedBy: {
+      color: '#cccccc',
+      fontSize: 12,
+    },
+    userName: {
+      color: '#ffffff',
+      fontSize: 18,
+      fontWeight: 'bold',
+      flexShrink: 1,
+    },
+    userPhoto: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      marginRight: 10,
+      borderWidth: 2,
+      borderColor: '#9FC63B',
+    },
+    publicacion: {
+      marginBottom: 20,
+      backgroundColor: '#23272A',
+      padding: 10,
+    },
+    image: {
+      width: '100%',
+      height: 200,
+      marginBottom: 10,
+    },
+    likeContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 10,
+    },
+    likeCount: {
+      color: '#ffffff',
+      marginLeft: 10,
+      fontSize: 14,
+    },
+    title: {
+      color: '#9FC63B',
+      fontSize: 18,
+      fontWeight: 'bold',
+      marginBottom: 5,
+    },
+    description: {
+      color: '#cccccc',
+      fontSize: 14,
+      marginBottom: 5,
+    },
+    date: {
+      color: '#888888',
+      fontSize: 12,
+      fontStyle: 'italic',
+    },
+    commentsTitle: {
+      color: '#9FC63B',
+      fontSize: 18,
+      fontWeight: 'bold',
+      marginTop: 20,
+    },
+    commentContainer: {
+      marginBottom: 15,
+      backgroundColor: '#2f353a',
+      padding: 10,
+      borderRadius: 5,
+    },
+    commentUser: {
+      color: '#9FC63B',
+      fontWeight: 'bold',
+      fontSize: 14,
+    },
+    commentText: {
+      color: '#ffffff',
+      fontSize: 14,
+      marginTop: 5,
+    },
+    commentDate: {
+      color: '#888888',
+      fontSize: 12,
+      fontStyle: 'italic',
+      marginTop: 5,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: '#23272A',
+    },
+    noPublicaciones: {
+      color: '#ffffff',
+      textAlign: 'center',
+      fontSize: 16,
+      marginTop: 20,
+    },
+    floatingButton: {
+      position: 'absolute',
+      bottom: 20,
+      right: 20,
+      backgroundColor: '#9FC63B',
+      borderRadius: 50,
+      padding: 10,
+      zIndex: 999,
+    },
+    floatingImage: {
+      width: 60,
+      height: 60,
+    },
+    commentsTitle: {
+      color: '#9FC63B',
+      fontSize: 18,
+      fontWeight: 'bold',
+      marginTop: 20,
+    },
+    commentContainer: {
+      marginBottom: 15,
+      backgroundColor: '#2f353a',
+      padding: 10,
+      borderRadius: 5,
+    },
+    commentUser: {
+      color: '#9FC63B',
+      fontWeight: 'bold',
+      fontSize: 14,
+    },
+    commentText: {
+      color: '#ffffff',
+      fontSize: 14,
+      marginTop: 5,
+    },
+    commentDate: {
+      color: '#ffffff',
+      fontSize: 12,
+      marginTop: 5,
+    },
+  floatingButton: { 
+      position: 'absolute',
+      bottom: 20,
+      right: 20,
+      borderRadius: 50, 
+      padding: 10 
+    },
+  floatingImage: { 
+      width: 60,
+      height: 60 },
+  modalContainer: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    backgroundColor: 'rgba(0,0,0,0.8)' 
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#23272A',
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
-  },
-  userInfo: {
-    marginLeft: 10,
-    flex: 1,
-  },
-  userDetails: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  publishedBy: {
-    color: '#cccccc',
-    fontSize: 12,
-  },
-  userName: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    flexShrink: 1,
-  },
-  userPhoto: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 10,
-    borderWidth: 2,
-    borderColor: '#9FC63B',
-  },
-  publicacion: {
-    marginBottom: 20,
-    backgroundColor: '#23272A',
-    padding: 10,
-  },
-  image: {
-    width: '100%',
-    height: 200,
-    marginBottom: 10,
-  },
-  likeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  likeCount: {
-    color: '#ffffff',
-    marginLeft: 10,
-    fontSize: 14,
-  },
-  title: {
-    color: '#9FC63B',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  description: {
-    color: '#cccccc',
-    fontSize: 14,
-    marginBottom: 5,
-  },
-  date: {
-    color: '#888888',
-    fontSize: 12,
-    fontStyle: 'italic',
-  },
-  commentsTitle: {
-    color: '#9FC63B',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 20,
-  },
-  commentContainer: {
-    marginBottom: 15,
-    backgroundColor: '#2f353a',
-    padding: 10,
-    borderRadius: 5,
-  },
-  commentUser: {
-    color: '#9FC63B',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  commentText: {
-    color: '#ffffff',
-    fontSize: 14,
-    marginTop: 5,
-  },
-  commentDate: {
-    color: '#888888',
-    fontSize: 12,
-    fontStyle: 'italic',
-    marginTop: 5,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#23272A',
-  },
-  noPublicaciones: {
-    color: '#ffffff',
-    textAlign: 'center',
-    fontSize: 16,
-    marginTop: 20,
-  },
-  floatingButton: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    backgroundColor: '#9FC63B',
-    borderRadius: 50,
-    padding: 10,
-    zIndex: 999,
-  },
-  floatingImage: {
-    width: 60,
-    height: 60,
-  },
-  commentsTitle: {
-    color: '#9FC63B',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 20,
-  },
-  commentContainer: {
-    marginBottom: 15,
-    backgroundColor: '#2f353a',
-    padding: 10,
-    borderRadius: 5,
-  },
-  commentUser: {
-    color: '#9FC63B',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  commentText: {
-    color: '#ffffff',
-    fontSize: 14,
-    marginTop: 5,
-  },
-  commentDate: {
-    color: '#ffffff',
-    fontSize: 12,
-    marginTop: 5,
-  }
+  modalContent: { 
+    width: '90%', 
+    backgroundColor: '#2f353a', 
+    padding: 20, 
+    borderRadius: 10 },
+  modalTitle: { 
+    color: '#9FC63B', 
+    fontSize: 18, 
+    fontWeight: 'bold', 
+    marginBottom: 10 },
+  textInput: { 
+    height: 100, 
+    backgroundColor: '#444', 
+    color: '#fff', 
+    padding: 10, 
+    borderRadius: 5, 
+    textAlignVertical: 'top' },
+  modalButtonsContainer: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    marginTop: 20 },
+  cancelButton: { 
+    flex: 1, 
+    backgroundColor: '#888', 
+    padding: 10, 
+    borderRadius: 5, 
+    marginRight: 5, 
+    alignItems: 'center' },
+  cancelButtonText: { 
+    color: '#fff', 
+    fontWeight: 'bold' },
+  publishButton: { 
+    flex: 1, 
+    backgroundColor: '#9FC63B', 
+    padding: 10, 
+    borderRadius: 5, 
+    marginLeft: 5, 
+    alignItems: 'center' },
+  publishButtonText: { 
+    color: '#fff', 
+    fontWeight: 'bold' }
 });

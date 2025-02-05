@@ -40,21 +40,34 @@ export function HomeScreen({ navigation }) {
   }, []);
 
   const fetchPublicaciones = async () => {
+    const url = 'http://192.168.1.154:8080/proyecto01/publicaciones';
+    
     try {
-      const url = 'http://192.168.1.154:8080/proyecto01/publicaciones';
       const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error('Error al obtener publicaciones');
+      let publicaciones = await response.json();
+  
+      for (let i = 0; i < publicaciones.length; i++) {
+        const pubId = publicaciones[i].id;
+        const comentariosUrl = `http://192.168.1.154:8080/proyecto01/comentarios/${pubId}`;
+        
+        try {
+          const comentariosResponse = await fetch(comentariosUrl);
+          const comentariosData = await comentariosResponse.json();
+          publicaciones[i].comentarios = comentariosData || [];
+        } catch (error) {
+          console.error(`Error obteniendo comentarios para ${pubId}:`, error);
+          publicaciones[i].comentarios = []; 
+        }
       }
-
-      const data = await response.json();
-      setPublicaciones(data || []);
+  
+      console.log("Publicaciones con comentarios:", publicaciones);
+      setPublicaciones(publicaciones);
+  
     } catch (error) {
       console.error('Error al obtener publicaciones:', error);
-    } finally {
-      setLoading(false);
     }
   };
+  
 
   const handleLike = async (id) => {
     try {
